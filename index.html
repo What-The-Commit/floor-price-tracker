@@ -2,120 +2,142 @@
 <html lang="en">
 
 <head>
-  <title>What the commit</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="Software Development for the NFT Community as a NFT">
-  <link rel="stylesheet" href="css/bulma/bulma.min.css">
-  <link rel="icon" type="image/svg+xml" href="bulma-plain-assets/logos/robot_light_grey.svg">
+    <title>What the commit</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Software Development for the NFT Community as a NFT">
+    <link rel="stylesheet" href="css/bulma/bulma.min.css">
+    <link rel="icon" type="image/svg+xml" href="bulma-plain-assets/logos/robot_light_grey.svg">
 
-  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+
+    <style>
+        .has-text-grey a {
+            color: #7a7a7a;
+        }
+
+        .has-text-grey a:hover {
+            color: #363636;
+        }
+    </style>
 </head>
 
 <body>
-  <div>
-    <section class="section pt-0">
-      <nav class="container pt-5">
-        <div class="navbar-brand" style="position: relative;left: -20px;">
-          <object type="image/svg+xml" data="bulma-plain-assets/logos/robot_light_grey.svg" width="80">
-            WTC Logo
-            <!-- fallback image in CSS -->
-          </object>
-          <h1 class="title has-text-weight-bold">
-            <a href="https://what-the-commit.com" style="color:#363636;" target="_blank">What the commit</a> | <a
-              href="https://floor.what-the-commit.com" style="color:#363636;">Floor Price Tracker</a>
-          </h1>
-        </div>
+    <div>
+        <section class="section pt-0">
+            <nav class="container pt-5">
+                <div class="navbar-brand" style="position: relative;left: -20px;">
+                    <object type="image/svg+xml" data="bulma-plain-assets/logos/robot_light_grey.svg" width="80">
+                        WTC Logo
+                        <!-- fallback image in CSS -->
+                    </object>
+                    <h1 class="title has-text-weight-bold">
+                        <a href="https://what-the-commit.com" style="color:#363636;" target="_blank">What the commit</a>
+                        | <a href="https://floor.what-the-commit.com" style="color:#363636;">Floor Price Tracker</a>
+                    </h1>
+                </div>
 
-      </nav>
-      <div class="container pt-5">
-        <div class="mb-5 is-vcentered columns is-multiline">
-          <div class="column is-12 is-5-desktop mb-5 mr-auto">
-            <h2 class="mb-6 is-size-1 is-size-3-mobile has-text-weight-bold">You vote.<br> We build. <br>Together for
-              the NFT community.</h2>
-            <p class="subtitle has-text-grey mb-6">10,000 commit messages<br>Generated on-chain, provably fair<br>Access
-              for Holders to everything we build<br>Community centric; DAO like<br><br><b>Software Development for the
-                NFT Community as a NFT.</b></p>
-            <div>
-              <label>Enter your wallet or ens address</label>
-              <input type="text" id="wallet-address" name="wallet-address" />
-              <button onclick="loadWallet();">Load</button>
+            </nav>
+            <div class="container pt-5">
+                <div class="mb-5 is-vcentered columns is-multiline">
+                    <div class="column is-12 is-5-desktop mb-5 mr-auto">
+                        <h2 class="mb-6 is-size-1 is-size-3-mobile has-text-weight-bold">You vote.<br> We build.
+                            <br>Together for
+                            the NFT community.</h2>
+                        <p class="subtitle has-text-grey mb-6">10,000 commit messages<br>Generated on-chain, provably
+                            fair<br>Access
+                            for Holders to everything we build<br>Community centric; DAO like<br><br><b>Software
+                                Development for the
+                                NFT Community as a NFT.</b></p>
+                        <p class="subtitle has-text-grey mb-6">
+                            <a href="https://what-the-commit.com"><b>Mint WTC NFTs (0.01 ETH) on Polygon now,<br/>and get access to future tools.</b></a>
+                            </p>
+                        <div>
+                            <label>Enter your wallet or ens address</label>
+                            <input type="text" id="wallet-address" name="wallet-address" />
+                            <button onclick="loadWallet();">Load</button>
+                        </div>
+                        <div id="portfolio-value-container">
+                            <h2 class="mb-6 mt-2 is-size-1 is-size-3-mobile has-text-weight-bold" style="display: none;"
+                                id="portfolio-value-heading">
+                                Current Portfolio Value<br />
+                                <span id="portfolio-value"></span>Ξ
+                                <span id="portfolio-value-usd"></span>$<br />
+                                <span id="portfolio-value-eur"></span>€<br />
+                            </h2>
+                        </div>
+                    </div>
+                    <div class="column is-12 is-6-desktop">
+                        <object type="image/svg+xml" data="bulma-plain-assets/wtc_example.svg"
+                            class="is-5-desktop is-3-mobile">
+                            NFT
+                            <!-- fallback image in CSS -->
+                        </object>
+                    </div>
+                </div>
             </div>
-            <div id="portfolio-value-container">
-              <h2 class="mb-6 mt-2 is-size-1 is-size-3-mobile has-text-weight-bold" style="display: none;" id="portfolio-value-heading">
-                Current Portfolio Value<br />
-                <span id="portfolio-value"></span>Ξ
-                <span id="portfolio-value-usd"></span>$<br />
-                <span id="portfolio-value-eur"></span>€<br />
-              </h2>
-            </div>
-          </div>
-          <div class="column is-12 is-6-desktop">
-            <object type="image/svg+xml" data="bulma-plain-assets/wtc_example.svg" class="is-5-desktop is-3-mobile">
-              NFT
-              <!-- fallback image in CSS -->
-            </object>
-          </div>
-        </div>
-      </div>
-    </section>
+        </section>
 
 
-    <footer class="section">
-      <div class="container">
-        <div class="pb-5 is-flex is-flex-wrap-wrap is-justify-content-between is-align-items-center">
-          <div class="mr-auto mb-2">
-            <a class="navbar-item pl-0" href="#">
-              <object type="image/svg+xml" data="bulma-plain-assets/logos/robot_light_grey.svg" width="80" style="position: relative;
+        <footer class="section">
+            <div class="container">
+                <div class="pb-5 is-flex is-flex-wrap-wrap is-justify-content-between is-align-items-center">
+                    <div class="mr-auto mb-2">
+                        <a class="navbar-item pl-0" href="#">
+                            <object type="image/svg+xml" data="bulma-plain-assets/logos/robot_light_grey.svg" width="80"
+                                style="position: relative;
     left: -20px;">
-                WTC Logo
-                <!-- fallback image in CSS -->
-              </object>
-              <h1 class="title has-text-weight-bold">What the commit</h1>
-            </a>
-          </div>
-          <div>
-            <ul class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-center">
-              <li class="mr-4">
-              <li class="mr-4">
-              <li class="mr-4">
-              <li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div class="pt-5" style="border-top: 1px solid #dee2e6;"></div>
-      <div class="container">
-        <div class="is-flex-tablet is-justify-content-between is-align-items-center">
-          <p>All rights reserved © What the commit by Kevin Mauel<a style="top: 5px;
+                                WTC Logo
+                                <!-- fallback image in CSS -->
+                            </object>
+                            <h1 class="title has-text-weight-bold">What the commit</h1>
+                        </a>
+                    </div>
+                    <div>
+                        <ul class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-center">
+                            <li class="mr-4">
+                            <li class="mr-4">
+                            <li class="mr-4">
+                            <li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-5" style="border-top: 1px solid #dee2e6;"></div>
+            <div class="container">
+                <div class="is-flex-tablet is-justify-content-between is-align-items-center">
+                    <p>All rights reserved © What the commit by Kevin Mauel<a style="top: 5px;
     position: relative;" href="https://twitter.com/bavragor94" target="_blank">
-              <img src="bulma-plain-assets/socials/twitter.svg" alt=""></a><a style="top: 5px;
+                            <img src="bulma-plain-assets/socials/twitter.svg" alt=""></a><a style="top: 5px;
     position: relative;" href="https://www.linkedin.com/in/kevin-mauel-656997134/" target="_blank">
-              <img src="bulma-plain-assets/socials/linkedin.svg" alt=""></a><br><a
-              href="https://polygonscan.com/address/0x5bcafb1061a183f767dd2d913c7ea43957dcdf02" target="_blank">WTC
-              Contract</a></p>
-          <div class="py-2 is-hidden-tablet"></div>
-          <div class="ml-auto">
+                            <img src="bulma-plain-assets/socials/linkedin.svg" alt=""></a><br><a
+                            href="https://polygonscan.com/address/0x5bcafb1061a183f767dd2d913c7ea43957dcdf02"
+                            target="_blank">WTC
+                            Contract</a></p>
+                    <div class="py-2 is-hidden-tablet"></div>
+                    <div class="ml-auto">
 
-            <a class="mr-4 is-inline-block" href="https://twitter.com/wtc_nft" target="_blank">
-              <img src="bulma-plain-assets/socials/twitter.svg" alt=""></a>
-            <a class="mr-4 is-inline-block" href="https://discord.com/invite/pertRZCmmP" target="_blank">
-              <img src="bulma-plain-assets/logos/discord_black.svg" alt="" width="28"></a>
-            <a class="mr-4 is-inline-block" href="https://opensea.io/collection/what-the-commit" target="_blank">
-              <img src="bulma-plain-assets/socials/opensea.svg" alt="" width="24"></a>
-            <a class="mr-4 is-inline-block" href="https://github.com/Bavragor/what-the-commit" target="_blank">
-              <img src="bulma-plain-assets/socials/github.svg" alt=""></a>
-            <a class="mr-4 is-inline-block" href="#">
-            </a>
-            <a class="is-inline-block" href="#">
-            </a>
-          </div>
-        </div>
-      </div>
-    </footer>
-  </div>
+                        <a class="mr-4 is-inline-block" href="https://twitter.com/wtc_nft" target="_blank">
+                            <img src="bulma-plain-assets/socials/twitter.svg" alt=""></a>
+                        <a class="mr-4 is-inline-block" href="https://discord.com/invite/pertRZCmmP" target="_blank">
+                            <img src="bulma-plain-assets/logos/discord_black.svg" alt="" width="28"></a>
+                        <a class="mr-4 is-inline-block" href="https://opensea.io/collection/what-the-commit"
+                            target="_blank">
+                            <img src="bulma-plain-assets/socials/opensea.svg" alt="" width="24"></a>
+                        <a class="mr-4 is-inline-block" href="https://github.com/Bavragor/what-the-commit"
+                            target="_blank">
+                            <img src="bulma-plain-assets/socials/github.svg" alt=""></a>
+                        <a class="mr-4 is-inline-block" href="#">
+                        </a>
+                        <a class="is-inline-block" href="#">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
 
-  <script type="text/javascript" src="js/main.js"></script>
+    <script type="text/javascript" src="js/main.js"></script>
 </body>
 
 </html>
