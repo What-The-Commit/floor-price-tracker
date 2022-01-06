@@ -1,126 +1,165 @@
-/* Moralis init code */
-const serverUrl = "https://kgw0j1x3q8zc.usemoralis.com:2053/server";
-const appId = "MaQGvtQTeEJQ1aY5N5Xoc0d6sHiYY3OiZsd2MnfY";
+const ethersProvider = new ethers.providers.JsonRpcProvider('https://speedy-nodes-nyc.moralis.io/4bdc28473b549df902238ed0/eth/mainnet');
 
-Moralis.start({ serverUrl, appId });
+const erc1155Identifier = 'semi-fungible';
+const erc721Identifier = 'non-fungible';
 
-/* Authentication code */
-async function loginWalletConnect() {
-  await Moralis.User.logOut();
-  let user = Moralis.User.current();
+let portfolioValue = 0.00;
+let breakdown = [];
 
-  if (!user) {
-    user = await Moralis.authenticate({ signingMessage: "Log in using Moralis", provider: "walletconnect" })
-      .then(function (user) {
-        document.getElementById("btn-login-walletconnect").style.display = 'none';
-        document.getElementById("btn-login-metamask").style.display = 'none';
-        document.getElementById("btn-floor").style.display = 'block';
-      })
-      .catch(function (error) {
-        console.error(error);
-      });
-  }
-}
+let ethPriceInUsd;
+let ethPriceInEur;
 
-async function loginMetamask() {
-  await Moralis.User.logOut();
-  let user = Moralis.User.current();
+window.addEventListener('load', async () => {
+    
+});
 
-  if (!user) {
-    user = await Moralis.authenticate({ signingMessage: "Log in using Moralis" })
-      .then(function (user) {
-        document.getElementById("btn-login-metamask").style.display = 'none';
-        document.getElementById("btn-login-walletconnect").style.display = 'none';
-        document.getElementById("connect-first-notice").style.display = 'none';
-        document.getElementById("btn-floor").style.display = 'block';
-      })
-      .catch(function (error) {
-        console.error(error);
-      });
-  }
-}
+async function loadWallet() {
+    wallet = document.getElementById('wallet-address').value;
 
-async function loadFloorPriceForAddress(address) {
-    const lowestPrice = await Moralis.Web3API.token.getNFTLowestPrice({address: address, days: 1});
-
-    return lowestPrice;
-}
-
-async function loadNfts() {
-    let user = Moralis.User.current();
-
-    if (!user) {
-        console.error('Login first');
-        return;
+    if (wallet.indexOf('.eth')) {
+        wallet = await ethersProvider.resolveName(wallet);
     }
 
-    document.getElementById("loading-spinner").style.display = 'inline-block';
+    console.log(wallet);
 
-    const userEthNFTs = await Moralis.Web3API.account.getNFTs();
+    ethPrices = await getEthPriceInOtherCurrencies();
+    ethPriceInUsd = ethPrices.USD;
+    ethPriceInEur = ethPrices.EUR;
 
-    var floorPrices = [];
+    await getCollectionsByOwner(wallet).then(async function (collections) {
+        await Promise.all(collections.map(async function(collection) {
+            if (collection.primary_asset_contracts.length === 1 && collection.primary_asset_contracts[0].asset_contract_type === erc721Identifier) {
+                var value = await getFloorPriceForCollectionBySlug(collection.slug);
+                if (value > 0) {
+                    portfolioValue += collection.owned_asset_count * value;
+                    breakdown.push({
+                        _name: collection.primary_asset_contracts[0].name,
+                        _amount: collection.owned_asset_count,
+                        _value: collection.owned_asset_count * value
+                    });
+                }
 
-    await Promise.all(userEthNFTs.result.map(async function(nft) {
-        const lowestPrice = await loadFloorPriceForAddress(nft.token_address);
-        
-        floorPrices.push({
-            name: nft.name,
-            token_symbol: nft.symbol,
-            token_address: nft.token_address,
-            token_id: nft.token_id,
-            price: lowestPrice.result === null ? 0 : lowestPrice.result.price / 1000000000000000000
-        });
-    }));
-
-    var overallValue = 0;
-    var overallValueByContract = [];
-
-    for (floorPrice of floorPrices) {
-        overallValue += floorPrice.price;
-
-        if (overallValueByContract.find(valueByContract => valueByContract.token_address === floorPrice.token_address) === undefined) {
-            overallValueByContract.push({
-                name: floorPrice.name,
-                token_address: floorPrice.token_address,
-                price: 0
-            });
-        }
-
-        overallValueByContract.find(valueByContract => valueByContract.token_address === floorPrice.token_address).price += floorPrice.price;
-    }
-
-    var html = '<table class="table"><thead><tr><th>Pos</th><th>Project</th><th>Value</th></tr></thead>';
-    html += '<tfoot><tr><th>Pos</th><th>Project</th><th>Value</th></tr></thead>';
-    html += '<tbody><tr class="is-selected"><th>1</th><td>Overall</td><td>' + parseFloat(overallValue).toFixed(2) + ' ETH</td></tr>';
-
-    overallValueByContract = overallValueByContract.sort(function (a, b) {
-            if (a.price > b.price) {
-                return -1;
+                return;
             }
 
-            if (a.price < b.price) {
-                return 1;
-            }
+            await Promise.all(collection.primary_asset_contracts.map(async function(primaryAssetContract) {
+                let assets = await getAssetsForOwnerByContract(wallet, primaryAssetContract.address);
+                assets = assets.assets;
 
-            return 0;
+                if (assets.length === 0) {
+                    return;
+                }
+
+                if (primaryAssetContract.asset_contract_type === erc721Identifier) {
+                    var value = await getLowestPriceOfAssetByContractAndId(primaryAssetContract.address);
+                    if (value > 0) {
+                        portfolioValue += assets.length * value;
+                        breakdown.push({
+                            _name: primaryAssetContract.name,
+                            _amount: assets.length,
+                            _value: assets.length * value,
+                            _contract: primaryAssetContract
+                        });
+                    }
+
+                    return;
+                }
+
+                if (primaryAssetContract.asset_contract_type === erc1155Identifier) {
+                    assets.forEach(async function (asset) {
+                        var value = await getLowestPriceOfAssetByContractAndId(primaryAssetContract.address, asset.token_id);
+                        if (value > 0) {
+                            portfolioValue += value;
+                            breakdown.push({
+                                _name: asset.name,
+                                _amount: 1,
+                                _value: value,
+                                _asset: asset,
+                                _contract: primaryAssetContract
+                            });
+                        }
+                    })
+
+                    return;
+                }
+            }));
+        })); 
+
+        //console.log(portfolioValue);
+        //console.log(breakdown);
+
+        document.getElementById('portfolio-value-heading').style.display = 'inline-block';
+        document.getElementById('portfolio-value').innerText = portfolioValue.toFixed(2);
+        document.getElementById('portfolio-value-usd').innerText = (portfolioValue * ethPriceInUsd).toFixed(2).toLocaleString();
+        document.getElementById('portfolio-value-eur').innerText = (portfolioValue * ethPriceInEur).toFixed(2).toLocaleString();
+    });
+}
+
+async function getCollectionsByOwner(ownerAddress) {
+    let response = await fetch('https://api.opensea.io/api/v1/collections?asset_owner=' + ownerAddress + '&offset=0&limit=300', { method: 'GET' });
+
+    return await response.json();
+}
+
+async function getFloorPriceForCollectionBySlug(slug) {
+    let response = await fetch('https://api.opensea.io/api/v1/collection/' + slug + '/stats', { method: 'GET' });
+
+    let data = await response.json();
+
+    return data.stats.floor_price;
+}
+
+async function getLowestPriceOfAssetByContractAndId(contract, id = null) {
+    const options = { method: 'GET' };
+
+    let params = new URLSearchParams({
+        asset_contract_address: contract,
+        order_by: 'sale_date',
+        order_direction: 'desc',
+        offset: 0,
+        limit: 1
     });
 
-    for (valueByContractAddress in overallValueByContract) {
-        valueByContract = overallValueByContract[valueByContractAddress];
-
-        html += '<tr>';
-        html += '<th>'+valueByContractAddress+1+'</th>';
-        html += '<td>'+valueByContract.name+'</td>';
-        html += '<td>'+parseFloat(valueByContract.price).toFixed(2) + ' ETH</td>';
-        html += '</tr>';
+    if (id !== null) {
+        params.append('token_ids', id);
     }
 
-    html += '</table>';
+    let response = await fetch('https://api.opensea.io/api/v1/assets?' + params.toString(), options);
+    let data = await response.json();
 
-    document.getElementById('floor-prices').innerHTML = '<h2 class="is-size-1 is-size-3-mobile">Floor prices based on lowest sale over the last day</h2><p class="subtitle has-text-grey mb-2">Opensea is currently unsupported, and ERC1155 are incorrectly priced</p>' + html;
-    document.getElementById("btn-floor").disabled = true;
+    if (data.assets.length === 0) {
+        return 0.00;
+    }
+
+    if (data.assets[0].last_sale.payment_token.symbol !== 'ETH') {
+        var string = data.assets[0].last_sale.total_price;
+
+        string = string.slice(0, string.length - data.assets[0].last_sale.payment_token.decimals) + "," + string.slice(string.length - data.assets[0].last_sale.payment_token.decimals);
+
+        return parseFloat(string) / ethPriceInUsd;
+    }
+
+    return parseFloat(ethers.utils.formatEther(data.assets[0].last_sale.total_price));
 }
 
-document.getElementById("btn-login-metamask").onclick = loginMetamask;
-document.getElementById("btn-login-walletconnect").onclick = loginWalletConnect;
-document.getElementById("btn-floor").onclick = loadNfts;
+async function getAssetsForOwnerByContract(owner, contract) {
+    let response = await fetch('https://api.opensea.io/api/v1/assets?owner='+owner+'&asset_contract_address='+contract+'&order_direction=desc&offset=0&limit=50', { method: 'GET' });
+
+    return await response.json();
+}
+
+async function getEthPriceInOtherCurrencies(currency = 'USD,EUR') {
+    let response = await fetch("https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=" + currency + "", {
+        "headers": {
+            "accept": "application/json"
+        },
+        "body": null,
+        "method": "GET",
+        "mode": "cors",
+        "credentials": "omit"
+    });
+
+    let data = await response.json();
+
+    return data;
+}
