@@ -27,7 +27,7 @@ async function loadWallet() {
 
     await openseaApi.getCollectionsByOwner(wallet).then(async function (collections) {
         await Promise.all(collections.map(async function(collection) {
-            if (collection.primary_asset_contracts.length === 1 && collection.primary_asset_contracts[0].asset_contract_type === erc721Identifier) {
+            if (collection.primary_asset_contracts.length === 1 && collection.primary_asset_contracts[0].asset_contract_type === openseaApi.erc721Identifier) {
                 var value = await openseaApi.getFloorPriceForCollectionBySlug(collection.slug);
                 if (value > 0) {
                     portfolioValue += collection.owned_asset_count * value;
@@ -49,7 +49,7 @@ async function loadWallet() {
                     return;
                 }
 
-                if (primaryAssetContract.asset_contract_type === erc721Identifier) {
+                if (primaryAssetContract.asset_contract_type === openseaApi.erc721Identifier) {
                     var value = await openseaApi.getLowestPriceOfAssetByContractAndId(primaryAssetContract.address);
                     if (value > 0) {
                         portfolioValue += assets.length * value;
@@ -64,7 +64,7 @@ async function loadWallet() {
                     return;
                 }
 
-                if (primaryAssetContract.asset_contract_type === erc1155Identifier) {
+                if (primaryAssetContract.asset_contract_type === openseaApi.erc1155Identifier) {
                     assets.forEach(async function (asset) {
                         var value = await openseaApi.getLowestPriceOfAssetByContractAndId(primaryAssetContract.address, asset.token_id);
                         if (value > 0) {
