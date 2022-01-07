@@ -3,9 +3,6 @@ const ethersProvider = new ethers.providers.JsonRpcProvider('https://speedy-node
 const erc1155Identifier = 'semi-fungible';
 const erc721Identifier = 'non-fungible';
 
-let portfolioValue = 0.00;
-let breakdown = [];
-
 let ethPriceInUsd;
 let ethPriceInEur;
 
@@ -14,6 +11,9 @@ window.addEventListener('load', async () => {
 });
 
 async function loadWallet() {
+    let portfolioValue = 0.00;
+    let breakdown = [];
+
     wallet = document.getElementById('wallet-address').value;
 
     if (wallet.indexOf('.eth')) {
@@ -85,8 +85,8 @@ async function loadWallet() {
             }));
         })); 
 
-        //console.log(portfolioValue);
-        //console.log(breakdown);
+        console.log(portfolioValue);
+        console.log(breakdown);
 
         document.getElementById('portfolio-value-heading').style.display = 'inline-block';
         document.getElementById('portfolio-value').innerText = portfolioValue.toFixed(2);
@@ -117,7 +117,7 @@ async function getLowestPriceOfAssetByContractAndId(contract, id = null) {
         order_by: 'sale_date',
         order_direction: 'desc',
         offset: 0,
-        limit: 1
+        limit: id !== null ? 1 : 20
     });
 
     if (id !== null) {
@@ -131,15 +131,42 @@ async function getLowestPriceOfAssetByContractAndId(contract, id = null) {
         return 0.00;
     }
 
-    if (data.assets[0].last_sale.payment_token.symbol.indexOf('USD')) {
-        var string = data.assets[0].last_sale.total_price;
+    var lowestPrice = 0;
 
-        string = string.slice(0, string.length - data.assets[0].last_sale.payment_token.decimals) + "," + string.slice(string.length - data.assets[0].last_sale.payment_token.decimals);
+    data.assets.forEach(function (asset, index) {
+        var assetPrice;
 
-        return (parseFloat(string) / ethPriceInUsd) / parseInt(data.assets[0].last_sale.quantity);
-    }
+        if (asset.asset_contract.asset_contract_type === erc721Identifier && asset.last_sale.payment_token.symbol.indexOf('WETH') !== -1) {
+            return
+        }
+ 
+        if (asset.last_sale.payment_token.symbol.indexOf('USD') !== -1) {
+            var convertedEth = convertUsdToEth(asset.last_sale.total_price, asset.last_sale.payment_token.decimals);
+    
+            assetPrice = convertedEth / parseInt(asset.last_sale.quantity);
 
-    return parseFloat(ethers.utils.formatEther(data.assets[0].last_sale.total_price))  / parseInt(data.assets[0].last_sale.quantity);
+            if (lowestPrice === 0 || assetPrice < lowestPrice) {
+                lowestPrice = assetPrice;
+            }
+
+            return;
+        }
+    
+        assetPrice = parseFloat(ethers.utils.formatEther(asset.last_sale.total_price))  / parseInt(asset.last_sale.quantity);
+ 
+        if (lowestPrice === 0 || assetPrice < lowestPrice) {
+            lowestPrice = assetPrice;
+        }
+  
+    });
+
+    return lowestPrice;
+}
+
+function convertUsdToEth(usdValue, decimals) {
+    usdValue = usdValue.slice(0, usdValue.length - decimals) + "," + usdValue.slice(usdValue.length - decimals);
+
+    return (parseFloat(usdValue) / ethPriceInUsd);
 }
 
 async function getAssetsForOwnerByContract(owner, contract) {
