@@ -131,15 +131,15 @@ async function getLowestPriceOfAssetByContractAndId(contract, id = null) {
         return 0.00;
     }
 
-    if (data.assets[0].last_sale.payment_token.symbol !== 'ETH') {
+    if (data.assets[0].last_sale.payment_token.symbol.indexOf('USD')) {
         var string = data.assets[0].last_sale.total_price;
 
         string = string.slice(0, string.length - data.assets[0].last_sale.payment_token.decimals) + "," + string.slice(string.length - data.assets[0].last_sale.payment_token.decimals);
 
-        return parseFloat(string) / ethPriceInUsd;
+        return (parseFloat(string) / ethPriceInUsd) / parseInt(data.assets[0].last_sale.quantity);
     }
 
-    return parseFloat(ethers.utils.formatEther(data.assets[0].last_sale.total_price));
+    return parseFloat(ethers.utils.formatEther(data.assets[0].last_sale.total_price))  / parseInt(data.assets[0].last_sale.quantity);
 }
 
 async function getAssetsForOwnerByContract(owner, contract) {
