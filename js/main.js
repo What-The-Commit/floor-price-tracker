@@ -1,8 +1,5 @@
 const ethersProvider = new ethers.providers.JsonRpcProvider('https://speedy-nodes-nyc.moralis.io/4bdc28473b549df902238ed0/eth/mainnet');
 
-const erc1155Identifier = 'semi-fungible';
-const erc721Identifier = 'non-fungible';
-
 let ethPriceInUsd;
 let ethPriceInEur;
 
