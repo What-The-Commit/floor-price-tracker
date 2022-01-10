@@ -24,7 +24,7 @@ async function loadWallet() {
         wallet = await ethersProvider.resolveName(wallet);
     }
 
-    console.log(wallet);
+    console.debug(wallet);
 
     ethPrices = await getEthPriceInOtherCurrencies();
     ethPriceInUsd = ethPrices.USD;
@@ -243,11 +243,13 @@ async function loadWallet() {
                         }
 
                         if (value > 0) {
+                            let amount = collection.primary_asset_contracts.length === 1 ? collection.owned_asset_count : 1;
+
                             portfolioValue += value;
                             breakdown.push({
                                 _name: asset.name,
-                                _amount: 1,
-                                _value: value,
+                                _amount: amount,
+                                _value: value * amount,
                                 _asset: asset,
                                 _contract: primaryAssetContract
                             });
@@ -257,8 +259,8 @@ async function loadWallet() {
             }));
         })); 
 
-        console.log(portfolioValue);
-        console.log(breakdown);
+        console.debug(portfolioValue);
+        console.debug(breakdown);
 
         breakdown.sort((a, b) => a._value > b._value && -1 || 1);
 
