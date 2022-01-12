@@ -243,7 +243,7 @@ async function loadWallet() {
                         }
 
                         if (value > 0) {
-                            let amount = collection.primary_asset_contracts.length === 1 ? collection.owned_asset_count : 1;
+                            let amount = 1;
 
                             portfolioValue += value;
                             breakdown.push({
