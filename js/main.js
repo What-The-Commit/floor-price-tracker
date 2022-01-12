@@ -230,7 +230,7 @@ async function loadWallet() {
                 }
 
                 if (primaryAssetContract.asset_contract_type === openseaApi.erc1155Identifier) {
-                    assets.forEach(async function (asset) {
+                    await assets.forEach(async function (asset) {
                         let value;
 
                         try {
