@@ -20,7 +20,7 @@ async function loadWallet() {
 
     let wallet = document.getElementById('wallet-address').value;
 
-    if (wallet.indexOf('.eth')) {
+    if (wallet.indexOf('.eth') !== -1) {
         let response = await fetch('https://api.what-the-commit.com/ens/resolve/' + wallet);
 
         wallet = await response.text();
@@ -232,7 +232,7 @@ async function loadWallet() {
                 }
 
                 if (primaryAssetContract.asset_contract_type === openseaApi.erc1155Identifier) {
-                    await assets.forEach(async function (asset) {
+                    for (const asset of assets) {
                         let value;
 
                         try {
@@ -247,6 +247,14 @@ async function loadWallet() {
                         if (value > 0) {
                             let amount = 1;
 
+                            try {
+                                const contract = new ethers.Contract(primaryAssetContract.address, ['function balanceOf(address account, uint256 id) public view returns (uint256)'], ethersProvider);
+
+                                amount = (await contract.balanceOf(wallet, asset.token_id)).toNumber();
+                            } catch (error) {
+                                console.error('Could not retrieve balance for owner');
+                            }
+
                             portfolioValue += value;
                             breakdown.push({
                                 _name: asset.name,
@@ -256,7 +264,7 @@ async function loadWallet() {
                                 _contract: primaryAssetContract
                             });
                         }
-                    })
+                    }
                 }
             }));
         })); 
