@@ -28,9 +28,15 @@ async function loadWallet() {
 
     console.debug(wallet);
 
-    ethPrices = await getEthPriceInOtherCurrencies();
-    ethPriceInUsd = ethPrices.USD;
-    ethPriceInEur = ethPrices.EUR;
+    const urlParams = new URLSearchParams(window.location.search);
+
+    let currencies = 'USD,EUR';
+
+    if (urlParams.has('currencies')) {
+        currencies = urlParams.get('currencies');
+    }
+
+    let ethPrices = await getEthPriceInOtherCurrencies(currencies);
 
     function getCollectionBySlug(collections, slug, contractAddress = null) {
         for (const collection of collections) {
@@ -278,6 +284,12 @@ async function loadWallet() {
 
         breakdown.sort((a, b) => a._value > b._value && -1 || 1);
 
+        let fiatHeadColumns = '';
+
+        for (const ethPrice of Object.entries(ethPrices)) {
+            fiatHeadColumns += `<th>${ethPrice[0]}</th>`;
+        }
+
         let breakdownTable = `
         <table class="table">
         <thead>
@@ -285,21 +297,25 @@ async function loadWallet() {
                 <th>Collection</th>
                 <th>Amount</th>
                 <th>ETH</th>
-                <th>USD</th>
-                <th>EUR</th>  
+                ${fiatHeadColumns}
             </tr>
         </thead>
         <tbody>
         `;
 
         for (const collection of breakdown) {
+            let fiatColumns = '';
+
+            for (const ethPrice of Object.entries(ethPrices)) {
+                fiatColumns += `<td>${(collection._value * ethPrice[1]).toFixed(2).toLocaleString()}</td>`;
+            }
+
             breakdownTable += `
                 <tr>
                     <td>${collection._name}</td>
                     <td>${collection._amount}</td>
                     <td>${collection._value.toFixed(2)}</td>
-                    <td>${(collection._value * ethPriceInUsd).toFixed(2).toLocaleString()}</td>
-                    <td>${(collection._value * ethPriceInEur).toFixed(2).toLocaleString()}</td>
+                    ${fiatColumns}
                 </tr>
             `;
         }
@@ -310,8 +326,12 @@ async function loadWallet() {
 
         document.getElementById('portfolio-value-heading').style.display = 'inline-block';
         document.getElementById('portfolio-value').innerText = portfolioValue.toFixed(2);
-        document.getElementById('portfolio-value-usd').innerText = (portfolioValue * ethPriceInUsd).toFixed(2).toLocaleString();
-        document.getElementById('portfolio-value-eur').innerText = (portfolioValue * ethPriceInEur).toFixed(2).toLocaleString();
+
+        let heading = document.getElementById('portfolio-value-heading');
+
+        for (const ethPrice of Object.entries(ethPrices)) {
+            heading.innerHTML = heading.innerHTML + `<span id="portfolio-value-${ethPrice[0].toLowerCase()}">${(portfolioValue * ethPrice[1]).toFixed(2).toLocaleString()}</span> ${ethPrice[0]}<br />`;
+        }
     });
 }
 
