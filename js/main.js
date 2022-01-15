@@ -155,6 +155,10 @@ async function loadWallet() {
         }
 
         await Promise.all(collections.map(async function(collection) {
+            if (collection.slug === 'ens') {
+                return;
+            }
+
             if (collection.owned_asset_count !== 0 && collection.primary_asset_contracts.length === 1 && collection.primary_asset_contracts[0].asset_contract_type === openseaApi.erc721Identifier) {
                 let value;
 
