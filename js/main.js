@@ -18,10 +18,12 @@ async function loadWallet() {
     let portfolioValue = 0.00;
     let breakdown = [];
 
-    wallet = document.getElementById('wallet-address').value;
+    let wallet = document.getElementById('wallet-address').value;
 
     if (wallet.indexOf('.eth')) {
-        wallet = await ethersProvider.resolveName(wallet);
+        let response = await fetch('https://api.what-the-commit.com/ens/resolve/' + wallet);
+
+        wallet = await response.text();
     }
 
     console.debug(wallet);
