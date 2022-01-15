@@ -255,7 +255,7 @@ async function loadWallet() {
                                 console.error('Could not retrieve balance for owner');
                             }
 
-                            portfolioValue += value;
+                            portfolioValue += value * amount;
                             breakdown.push({
                                 _name: asset.name,
                                 _amount: amount,
