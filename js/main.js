@@ -3,10 +3,6 @@ const ethersProvider = new ethers.providers.JsonRpcProvider('https://speedy-node
 let ethPriceInUsd;
 let ethPriceInEur;
 
-window.addEventListener('load', async () => {
-    
-});
-
 const openseaApi = new OpenseaApi(ethers.utils);
 
 const stakingContractAddressMetahero = '0x6ce31a42058F5496005b39272c21c576941DBfe9';
@@ -214,7 +210,7 @@ async function loadWallet() {
                     let value;
 
                     try {
-                        value = await openseaApi.getLowestPriceOfAssetByContractAndId(primaryAssetContract.address);
+                        value = await getFloorPriceForContract(primaryAssetContract.address);
                     } catch (openseaError) {
                         document.getElementById('opensea-error').style.display = 'block';
                         document.getElementById('opensea-error').innerText = 'Opensea is rate limiting, please try again in a minute or so';
@@ -246,7 +242,7 @@ async function loadWallet() {
                         let value;
 
                         try {
-                            value = await openseaApi.getLowestPriceOfAssetByContractAndId(primaryAssetContract.address, asset.token_id);
+                            value = await getFloorPriceForContractAndTokenId(primaryAssetContract.address, asset.token_id);
                         } catch (openseaError) {
                             document.getElementById('opensea-error').style.display = 'block';
                             document.getElementById('opensea-error').innerText = 'Opensea is rate limiting, please try again in a minute or so';
@@ -349,4 +345,37 @@ async function getEthPriceInOtherCurrencies(currency = 'USD,EUR') {
     let data = await response.json();
 
     return data;
+}
+
+const apiHost = 'https://api.what-the-commit.com';
+
+async function getFloorPriceForContract(contractAddress) {
+    let response = await fetch(apiHost+'/nft/'+contractAddress+'/lowest-price', {method: 'POST', headers: {"Content-Type": "application/json;charset=UTF-8"}});
+    let responseData = await response.json();
+
+    try {
+        return parseFloat(responseData[0].order.price['$numberDecimal']);
+    } catch (error) {
+        return 0.00;
+    }
+}
+
+async function getFloorPriceForContractAndTokenId(contractAddress, tokenId) {
+    const body = {
+        "filters": [
+            {
+                "key": "tokenId",
+                "value": tokenId
+            }
+        ]
+    };
+
+    let response = await fetch(apiHost+'/nft/'+contractAddress+'/lowest-price', {method: 'POST', body: JSON.stringify(body), headers: {"Content-Type": "application/json;charset=UTF-8"}});
+    let responseData = await response.json();
+
+    try {
+        return parseFloat(responseData[0].order.price['$numberDecimal']);
+    } catch (error) {
+        return 0.00;
+    }
 }
