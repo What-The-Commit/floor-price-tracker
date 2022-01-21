@@ -10,20 +10,7 @@ const stakingContractAddressMetaheroCore = '0xedd4925ce390b9bb922fbdb868cdf220d6
 const stakingContractAddressPunksComic = '0xb7bceb36c5f0f8ec1fb67aaeeed2d7252112ea21';
 const stakingContractAddressPunksComicSpecialEdition = '0x2db69d45771055f95050a8530add756264109ac5';
 
-async function loadWallet() {
-    let portfolioValue = 0.00;
-    let breakdown = [];
-
-    let wallet = document.getElementById('wallet-address').value;
-
-    if (wallet.indexOf('.eth') !== -1) {
-        let response = await fetch('https://api.what-the-commit.com/ens/resolve/' + wallet);
-
-        wallet = await response.text();
-    }
-
-    console.debug(wallet);
-
+async function loadWallets() {
     const urlParams = new URLSearchParams(window.location.search);
 
     let currencies = 'USD,EUR';
@@ -32,7 +19,115 @@ async function loadWallet() {
         currencies = urlParams.get('currencies');
     }
 
-    let ethPrices = await getEthPriceInOtherCurrencies(currencies);
+    const ethPrices = await getEthPriceInOtherCurrencies(currencies);
+
+    const wallets = document.getElementsByClassName('wallet-address');
+
+    let portfolioValue = 0.00
+    let breakdown = [];
+
+    let mergeBreakdowns = function (allBreakdowns,breakdownPerWallet){
+        for (const walletCollection of breakdownPerWallet) {
+            const sameCollectionIndex = allBreakdowns.findIndex(function (collection) {
+                return collection._name === walletCollection._name;
+            });
+
+            if (sameCollectionIndex === -1) {
+                allBreakdowns.push(walletCollection);
+                continue;
+            }
+
+            allBreakdowns[sameCollectionIndex]._value += walletCollection._value;
+            allBreakdowns[sameCollectionIndex]._amount += walletCollection._amount;
+        }
+    };
+
+    const walletCalls = [];
+
+    for (const wallet of wallets) {
+        let walletAddress = wallet.value;
+
+        if (walletAddress.indexOf('.eth') !== -1) {
+            let response = await fetch('https://api.what-the-commit.com/ens/resolve/' + walletAddress);
+
+            walletAddress = await response.text();
+        }
+
+        console.debug(walletAddress);
+
+
+
+        walletCalls.push(loadWallet(walletAddress));
+    }
+
+    const allWalletBreakdowns = await Promise.all(walletCalls);
+
+    for (const [portfolioValuePerWallet, breakdownPerWallet] of allWalletBreakdowns) {
+        portfolioValue += portfolioValuePerWallet;
+
+        if (breakdown.length === 0) {
+            breakdown = breakdownPerWallet;
+            continue;
+        }
+
+        mergeBreakdowns(breakdown, breakdownPerWallet);
+    }
+
+    breakdown.sort((a, b) => a._value > b._value && -1 || 1);
+
+    let fiatHeadColumns = '';
+
+    for (const ethPrice of Object.entries(ethPrices)) {
+        fiatHeadColumns += `<th>${ethPrice[0]}</th>`;
+    }
+
+    let breakdownTable = `
+        <table class="table">
+        <thead>
+            <tr>
+                <th>Collection</th>
+                <th>Amount</th>
+                <th>ETH</th>
+                ${fiatHeadColumns}
+            </tr>
+        </thead>
+        <tbody>
+        `;
+
+    for (const collection of breakdown) {
+        let fiatColumns = '';
+
+        for (const ethPrice of Object.entries(ethPrices)) {
+            fiatColumns += `<td>${(collection._value * ethPrice[1]).toFixed(2).toLocaleString()}</td>`;
+        }
+
+        breakdownTable += `
+                <tr>
+                    <td>${collection._name}</td>
+                    <td>${collection._amount}</td>
+                    <td>${collection._value.toFixed(2)}</td>
+                    ${fiatColumns}
+                </tr>
+            `;
+    }
+
+    breakdownTable += '</tbody></table>';
+
+    document.getElementById('container-breakdown-table').innerHTML = breakdownTable;
+
+    let heading = document.getElementById('portfolio-value-heading');
+
+    heading.innerHTML = `Current Portfolio Value<br /><span id="portfolio-value">${portfolioValue.toFixed(2)}</span>Ξ<br/>`;
+    for (const ethPrice of Object.entries(ethPrices)) {
+        heading.innerHTML += `<span id="portfolio-value-${ethPrice[0].toLowerCase()}">${(portfolioValue * ethPrice[1]).toFixed(2).toLocaleString()}</span> ${ethPrice[0]}<br />`;
+    }
+
+    document.getElementById('portfolio-value-heading').style.display = 'inline-block';
+}
+
+async function loadWallet(wallet) {
+    let portfolioValue = 0.00;
+    let breakdown = [];
 
     function getCollectionBySlug(collections, slug, contractAddress = null) {
         for (const collection of collections) {
@@ -275,60 +370,11 @@ async function loadWallet() {
             }));
         })); 
 
-        console.debug(portfolioValue);
-        console.debug(breakdown);
-
-        breakdown.sort((a, b) => a._value > b._value && -1 || 1);
-
-        let fiatHeadColumns = '';
-
-        for (const ethPrice of Object.entries(ethPrices)) {
-            fiatHeadColumns += `<th>${ethPrice[0]}</th>`;
-        }
-
-        let breakdownTable = `
-        <table class="table">
-        <thead>
-            <tr>
-                <th>Collection</th>
-                <th>Amount</th>
-                <th>ETH</th>
-                ${fiatHeadColumns}
-            </tr>
-        </thead>
-        <tbody>
-        `;
-
-        for (const collection of breakdown) {
-            let fiatColumns = '';
-
-            for (const ethPrice of Object.entries(ethPrices)) {
-                fiatColumns += `<td>${(collection._value * ethPrice[1]).toFixed(2).toLocaleString()}</td>`;
-            }
-
-            breakdownTable += `
-                <tr>
-                    <td>${collection._name}</td>
-                    <td>${collection._amount}</td>
-                    <td>${collection._value.toFixed(2)}</td>
-                    ${fiatColumns}
-                </tr>
-            `;
-        }
-
-        breakdownTable += '</tbody></table>';
-
-        document.getElementById('container-breakdown-table').innerHTML = breakdownTable;
-
-        document.getElementById('portfolio-value-heading').style.display = 'inline-block';
-        document.getElementById('portfolio-value').innerText = portfolioValue.toFixed(2);
-
-        let heading = document.getElementById('portfolio-value-heading');
-
-        for (const ethPrice of Object.entries(ethPrices)) {
-            heading.innerHTML = heading.innerHTML + `<span id="portfolio-value-${ethPrice[0].toLowerCase()}">${(portfolioValue * ethPrice[1]).toFixed(2).toLocaleString()}</span> ${ethPrice[0]}<br />`;
-        }
+        console.debug(wallet, portfolioValue);
+        console.debug(wallet, breakdown);
     });
+
+    return [portfolioValue, breakdown];
 }
 
 async function getEthPriceInOtherCurrencies(currency = 'USD,EUR') {
