@@ -1,7 +1,4 @@
-const ethersProvider = new ethers.providers.JsonRpcProvider('https://speedy-nodes-nyc.moralis.io/4bdc28473b549df902238ed0/eth/mainnet');
-
-let ethPriceInUsd;
-let ethPriceInEur;
+const ethersProvider = new ethers.providers.JsonRpcProvider('http://88.99.165.124:8545');
 
 const openseaApi = new OpenseaApi(ethers.utils);
 
