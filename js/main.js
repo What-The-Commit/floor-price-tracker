@@ -7,7 +7,21 @@ const stakingContractAddressMetaheroCore = '0xedd4925ce390b9bb922fbdb868cdf220d6
 const stakingContractAddressPunksComic = '0xb7bceb36c5f0f8ec1fb67aaeeed2d7252112ea21';
 const stakingContractAddressPunksComicSpecialEdition = '0x2db69d45771055f95050a8530add756264109ac5';
 
-async function loadWallets() {
+window.addEventListener('load', async function () {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const wallets = [];
+
+    for (const address of urlParams.getAll('address')) {
+        wallets.push({value: address});
+    }
+
+    if (wallets.length !== 0) {
+        await loadWallets(wallets);
+    }
+})
+
+async function loadWallets(wallets = null) {
     const urlParams = new URLSearchParams(window.location.search);
 
     let currencies = 'USD,EUR';
@@ -18,7 +32,9 @@ async function loadWallets() {
 
     const ethPrices = await getEthPriceInOtherCurrencies(currencies);
 
-    const wallets = document.getElementsByClassName('wallet-address');
+    if (wallets === null) {
+        wallets = document.getElementsByClassName('wallet-address');
+    }
 
     let portfolioValue = 0.00
     let breakdown = [];
