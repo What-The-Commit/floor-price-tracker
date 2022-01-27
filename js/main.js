@@ -36,7 +36,11 @@ async function loadWallets(wallets = null) {
         wallets = document.getElementsByClassName('wallet-address');
     }
 
-    let portfolioValue = 0.00
+    const portfolioValue = {
+        value: 0.00,
+        valueWithFees: 0.00
+    };
+
     let breakdown = [];
 
     let mergeBreakdowns = function (allBreakdowns,breakdownPerWallet){
@@ -68,15 +72,14 @@ async function loadWallets(wallets = null) {
 
         console.debug(walletAddress);
 
-
-
         walletCalls.push(loadWallet(walletAddress));
     }
 
     const allWalletBreakdowns = await Promise.all(walletCalls);
 
     for (const [portfolioValuePerWallet, breakdownPerWallet] of allWalletBreakdowns) {
-        portfolioValue += portfolioValuePerWallet;
+        portfolioValue.value += portfolioValuePerWallet.value;
+        portfolioValue.valueWithFees += portfolioValuePerWallet.valueWithFees;
 
         if (breakdown.length === 0) {
             breakdown = breakdownPerWallet;
@@ -118,7 +121,7 @@ async function loadWallets(wallets = null) {
                 <tr>
                     <td>${collection._name}</td>
                     <td>${collection._amount}</td>
-                    <td>${collection._value.toFixed(2)}</td>
+                    <td>${collection._value.toFixed(2)} (${(collection._value - (collection._value * (collection._fees.osFee + collection._fees.devFee))).toFixed(2)})</td>
                     ${fiatColumns}
                 </tr>
             `;
@@ -130,16 +133,20 @@ async function loadWallets(wallets = null) {
 
     let heading = document.getElementById('portfolio-value-heading');
 
-    heading.innerHTML = `Current Portfolio Value<br /><span id="portfolio-value">${portfolioValue.toFixed(2)}</span>Ξ<br/>`;
+    heading.innerHTML = `Current Portfolio Value<br /><span id="portfolio-value">${portfolioValue.value.toFixed(2)} (${portfolioValue.valueWithFees.toFixed(2)})</span>Ξ<br/>`;
+
     for (const ethPrice of Object.entries(ethPrices)) {
-        heading.innerHTML += `<span id="portfolio-value-${ethPrice[0].toLowerCase()}">${(portfolioValue * ethPrice[1]).toFixed(2).toLocaleString()}</span> ${ethPrice[0]}<br />`;
+        heading.innerHTML += `<span id="portfolio-value-${ethPrice[0].toLowerCase()}">${(portfolioValue.value * ethPrice[1]).toFixed(2).toLocaleString()}</span> ${ethPrice[0]}<br />`;
     }
 
     document.getElementById('portfolio-value-heading').style.display = 'inline-block';
 }
 
 async function loadWallet(wallet) {
-    let portfolioValue = 0.00;
+    let portfolioValue = {
+        value: 0.00,
+        valueWithFees: 0.00
+    };
     let breakdown = [];
 
     function getCollectionBySlug(collections, slug, contractAddress = null) {
@@ -192,9 +199,11 @@ async function loadWallet(wallet) {
             collections.push({
                 slug: 'metahero-generative',
                 owned_asset_count: stakedMetaheroBalance,
+                opensea_seller_fee_basis_points: "250",
                 primary_asset_contracts: [{
                     name: 'MetaHero',
-                    asset_contract_type: 'non-fungible'
+                    asset_contract_type: 'non-fungible',
+                    dev_seller_fee_basis_points: "750"
                 }]
             });
         }
@@ -207,9 +216,11 @@ async function loadWallet(wallet) {
             collections.push({
                 slug: 'metaherouniverse',
                 owned_asset_count: stakedMetaheroBalance,
+                opensea_seller_fee_basis_points: "250",
                 primary_asset_contracts: [{
                     name: 'MetaHero Core',
-                    asset_contract_type: 'non-fungible'
+                    asset_contract_type: 'non-fungible',
+                    dev_seller_fee_basis_points: "750"
                 }]
             });
         }
@@ -222,12 +233,14 @@ async function loadWallet(wallet) {
             collections.push({
                 slug: 'punks-comic',
                 owned_asset_count: 0,
+                opensea_seller_fee_basis_points: "250",
                 primary_asset_contracts: [
                     {
                         name: 'PUNKS: Issue #1',
                         address: '0x5ab21ec0bfa0b29545230395e3adaca7d552c948',
                         asset_contract_type: 'non-fungible',
-                        owned_asset_token_ids: stakedPunksComicTokenIds
+                        owned_asset_token_ids: stakedPunksComicTokenIds,
+                        dev_seller_fee_basis_points: "750"
                     }
                 ]
             });
@@ -245,12 +258,14 @@ async function loadWallet(wallet) {
             collections.push({
                 slug: 'punks-comic',
                 owned_asset_count: 0,
+                opensea_seller_fee_basis_points: "250",
                 primary_asset_contracts: [
                     {
                         name: 'PUNKS: Issue #1 (Special Edition)',
                         address: '0xa9c0a07a7cb84ad1f2ffab06de3e55aab7d523e8',
                         asset_contract_type: 'non-fungible',
-                        owned_asset_token_ids: stakedPunksComicSpecialEditionTokenIds
+                        owned_asset_token_ids: stakedPunksComicSpecialEditionTokenIds,
+                        dev_seller_fee_basis_points: "750"
                     }
                 ]
             });
@@ -282,11 +297,22 @@ async function loadWallet(wallet) {
                 }
 
                 if (value > 0) {
-                    portfolioValue += collection.owned_asset_count * value;
+                    const osFee = parseInt(collection.opensea_seller_fee_basis_points) / 100 / 100;
+                    const devFee = parseInt(collection.primary_asset_contracts[0].dev_seller_fee_basis_points) / 100 / 100;
+
+                    const collectionValue = collection.owned_asset_count * value;
+
+                    portfolioValue.value += collectionValue;
+                    portfolioValue.valueWithFees += collectionValue - (collectionValue * (osFee + devFee));
+
                     breakdown.push({
                         _name: collection.primary_asset_contracts[0].name,
                         _amount: collection.owned_asset_count,
-                        _value: collection.owned_asset_count * value
+                        _value: collection.owned_asset_count * value,
+                        _fees: {
+                            osFee: osFee,
+                            devFee: devFee
+                        }
                     });
                 }
 
@@ -333,12 +359,23 @@ async function loadWallet(wallet) {
                             amount += primaryAssetContract.owned_asset_token_ids.length;
                         }
 
-                        portfolioValue += amount * value;
+                        const osFee = parseInt(collection.opensea_seller_fee_basis_points) / 100 / 100;
+                        const devFee = parseInt(primaryAssetContract.dev_seller_fee_basis_points) / 100 / 100;
+
+                        const collectionValue = amount * value;
+
+                        portfolioValue.value += collectionValue;
+                        portfolioValue.valueWithFees += collectionValue - (collectionValue * (osFee + devFee));
+
                         breakdown.push({
                             _name: primaryAssetContract.name,
                             _amount: amount,
                             _value: amount * value,
-                            _contract: primaryAssetContract
+                            _contract: primaryAssetContract,
+                            _fees: {
+                                osFee: osFee,
+                                devFee: devFee
+                            }
                         });
                     }
 
@@ -369,13 +406,24 @@ async function loadWallet(wallet) {
                                 console.error('Could not retrieve balance for owner');
                             }
 
-                            portfolioValue += value * amount;
+                            const osFee = parseInt(collection.opensea_seller_fee_basis_points) / 100 / 100;
+                            const devFee = parseInt(primaryAssetContract.dev_seller_fee_basis_points) / 100 / 100;
+
+                            const collectionValue = value * amount;
+
+                            portfolioValue.value += collectionValue;
+                            portfolioValue.valueWithFees += collectionValue - (collectionValue * (osFee + devFee));
+
                             breakdown.push({
                                 _name: asset.name,
                                 _amount: amount,
                                 _value: value * amount,
                                 _asset: asset,
-                                _contract: primaryAssetContract
+                                _contract: primaryAssetContract,
+                                _fees: {
+                                    osFee: osFee,
+                                    devFee: devFee
+                                }
                             });
                         }
                     }
