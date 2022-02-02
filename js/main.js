@@ -1,6 +1,6 @@
 const ethersProvider = new ethers.providers.JsonRpcProvider('https://speedy-nodes-nyc.moralis.io/4bdc28473b549df902238ed0/eth/mainnet');
 
-const openseaApi = new OpenseaApi(ethers.utils);
+const openseaApi = new OpenseaApi(ethers.utils, '7b3c64d252ea40ff82d6687c48d04da5');
 
 const stakingContractAddressMetahero = '0x6ce31a42058F5496005b39272c21c576941DBfe9';
 const stakingContractAddressMetaheroCore = '0xedd4925ce390b9bb922fbdb868cdf220d64d6c25';
