@@ -1,6 +1,6 @@
 const ethersProvider = new ethers.providers.JsonRpcProvider('https://speedy-nodes-nyc.moralis.io/4bdc28473b549df902238ed0/eth/mainnet');
 
-const openseaApi = new OpenseaApi(ethers.utils, '7b3c64d252ea40ff82d6687c48d04da5');
+const openseaApi = new OpenseaApi(ethers.utils, '7b3c64d252ea40ff82d6687c48d04da5', 0.9, 'https://os-proxy.what-the-commit.com/');
 
 const stakingContractAddressMetahero = '0x6ce31a42058F5496005b39272c21c576941DBfe9';
 const stakingContractAddressMetaheroCore = '0xedd4925ce390b9bb922fbdb868cdf220d64d6c25';
@@ -291,7 +291,7 @@ async function loadWallet(wallet) {
                     value = await openseaApi.getFloorPriceForCollectionBySlug(collection.slug);
                 } catch (openseaError) {
                     document.getElementById('opensea-error').style.display = 'block';
-                    document.getElementById('opensea-error').innerText = 'Opensea is rate limiting, please try again in a minute or so';
+                    document.getElementById('opensea-error').innerText = 'Opensea is rate limiting, please try again in a minute';
                     console.error(openseaError);
                     return;
                 }
