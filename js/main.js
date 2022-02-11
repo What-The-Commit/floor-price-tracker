@@ -104,6 +104,7 @@ async function loadWallets(wallets = null) {
                 <th>Collection</th>
                 <th>Amount</th>
                 <th>ETH</th>
+                <th>ETH/Unit</th>
                 ${fiatHeadColumns}
             </tr>
         </thead>
@@ -122,6 +123,7 @@ async function loadWallets(wallets = null) {
                     <td>${collection._name}</td>
                     <td>${collection._amount}</td>
                     <td>${collection._value.toFixed(2)} (${(collection._value - (collection._value * (collection._fees.osFee + collection._fees.devFee))).toFixed(2)})</td>
+                    <td>${(collection._value / collection._amount).toFixed(2)} (${(collection._value / collection._amount - (collection._value / collection._amount * (collection._fees.osFee + collection._fees.devFee))).toFixed(2)})</td>
                     ${fiatColumns}
                 </tr>
             `;
