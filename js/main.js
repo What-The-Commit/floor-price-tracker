@@ -289,8 +289,15 @@ async function loadWallet(wallet) {
             if (collection.owned_asset_count !== 0 && collection.primary_asset_contracts.length === 1 && collection.primary_asset_contracts[0].asset_contract_type === openseaApi.erc721Identifier) {
                 let value;
 
+                const urlParams = new URLSearchParams(window.location.search);
+                let useAvg = false;
+
+                if (urlParams.has('use-avg') && urlParams.get('use-avg') === '1') {
+                    useAvg = true;
+                }
+
                 try {
-                    value = await openseaApi.getFloorPriceForCollectionBySlug(collection.slug);
+                    value = await openseaApi.getFloorPriceForCollectionBySlug(collection.slug, useAvg);
                 } catch (openseaError) {
                     document.getElementById('opensea-error').style.display = 'block';
                     document.getElementById('opensea-error').innerText = 'Opensea is rate limiting, please try again in a minute';
